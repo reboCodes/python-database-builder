@@ -2,15 +2,20 @@
 class Table:
 
     def __init__(self):
-
+        # make the table name plural
+        self._table_name = (type(self).__name__ + "s").lower()
+        
+        # store the sql field data
+        # store the class fields
+        self._sql_data = {}
+        self._fields = {}
         for key, value in vars(self).items():
-            print(key)
-            for val in value:
-                print(f"   {val}")
-
-        self.table_name = type(self).__name__ + "s"
-
-
+            if key[0] != "_":
+                if key == "id":
+                    self._sql_data[key] = ["serial", "primary key"]
+                    self._fields[key] = "serial"
+                self._sql_data[key] = value
+                self._fields[key] = value[0]
 
     def insert(self):
         for key, value in self.variables.items():
@@ -23,7 +28,6 @@ class Table:
         for var in self.variables.keys():
             sql += var + ", "
         print(sql[:-2])
-
 
     # set the values on the server but don't add them to the database
     # takes a diction of values or individual arguments
