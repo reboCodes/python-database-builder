@@ -6,6 +6,7 @@ class Database:
         self.tables = []
         self._set_connection(host, database, user, password) # call the set_connection method to set the connection variable
         self.connect()
+        self._fetch_table_names()
 
     # method to connect to the database
     def connect(self):
@@ -22,20 +23,26 @@ class Database:
         except Exception as err:
             print("Could not connect to database.")
             print(err)
-
+        # store a cursor in the instance
         self._new_cursor()
+        # return self so you can call connect() while instanciating Database  
         return self
     
     # method to create tables in the database
     def create_table(self, *args):
         for arg in args:
             # check if args are of type Table
-            if issubclass(type(arg), Table):
-                # treat args as type Table
-                arg: Table
-            else:
+            if not issubclass(type(arg), Table):
                 print(f"create_table() only takes type: <Table>")
                 return
+            # treat args as type Table
+            arg: Table
+
+            # TODO: figure out a way to call the table init function
+
+            if arg._table_name in self.tables:
+                print(f"Table '{arg._table_name}' already exists." )
+                continue
             try:
                 sql = f"create table if not exists {arg._table_name} ("
                 for key, value in arg._sql_data.items():
@@ -47,25 +54,23 @@ class Database:
                 self._cur.execute(sql)
                 self._conn.commit()
                 print(f"Created table {arg._table_name}")
-
             except Exception as err:
                 print(f"Could not create table {arg._table_name}")
                 print(err)
-        self._cache_tables()
+        
+            # cache table
+            self.tables.append(arg)
 
     def drop_table(self, *args):
         for arg in args:
-            # check if table exists
-            sql = f"""
-            select exists (
-                select 1
-                from   information_schema.tables
-                where  table_schema = 'public'
-                and    table_name = '{arg._table_name}'
-            );"""
-            self._cur.execute(sql)
+            # check if arg is type Table
+            if not issubclass(type(arg), Table):
+                print(f"create_table() only takes type: <Table>")
+                return
+            # treat args as type Table
+            arg: Table
             # if table does not exist, continue to next iteration
-            if not self._cur.fetchone()[0]:
+            if not arg._table_name in self.tables:
                 print(f"Table {arg._table_name} does not exist")
                 continue
             # attempt to delete the table, throw an error if it fails
@@ -75,14 +80,54 @@ class Database:
                 self._conn.commit()
                 print(f"Dropped table {arg._table_name}")
             except Exception as err:
-                print(f"Cound not drop table {arg._table_name}")
+                print(f"Cound not drop table '{arg._table_name}'")
                 print(err)
 
 
     # private:
 
+    # method to set the connection variable
+    def _set_connection(self, host, database, user, password):
+        self.host = host
+        self.database = database
+        self.user = user
+        self.password = password
+
+    # method to create a cursor
+    def _new_cursor(self):
+        # create a cursor
+        try:
+            self._cur = self._conn.cursor()
+        except Exception as err:
+            print("Could not create database cursor.")
+            print(err)
+    
+    # check if input is type Table
+    def _is_table(self, input):
+        return issubclass(type(input), Table)
+
+
+    # drop all tables
+    def _drop_all_tables(self):
+        try:
+            self._cur.execute("""
+                SELECT 'DROP TABLE IF EXISTS "' || tablename || '" CASCADE;'
+                FROM pg_tables
+                WHERE schemaname = 'public';
+            """)
+            self._conn.commit()
+            self.tables = []
+            print("All tables dropped")
+        except Exception as err:
+            print("Error while dropping all tables")
+            print(err)
+
+
+    #
+    # I don't think I need this..?
+    #
     # method to cache table names on database object
-    def _cache_tables(self):
+    def _fetch_table_names(self):
         self._cur.execute("""
             SELECT table_name
             FROM information_schema.tables
@@ -94,19 +139,3 @@ class Database:
         for table in self._cur.fetchall():
             tables.append(table[0])
         self.tables = tables
-
-    # method to create a cursor
-    def _new_cursor(self):
-        # create a cursor
-        try:
-            self._cur = self._conn.cursor()
-        except Exception as err:
-            print("Could not create database cursor.")
-            print(err)
-
-    # method to set the connection variable
-    def _set_connection(self, host, database, user, password):
-        self.host = host
-        self.database = database
-        self.user = user
-        self.password = password

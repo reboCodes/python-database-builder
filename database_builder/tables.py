@@ -14,8 +14,13 @@ class Table:
                 if key == "id":
                     self._sql_data[key] = ["serial", "primary key"]
                     self._fields[key] = "serial"
+                print(key)
+                print(f"   {value}")
                 self._sql_data[key] = value
                 self._fields[key] = value[0]
+
+    def super_init(self):
+        self.__init__()
 
     def insert(self):
         for key, value in self.variables.items():
