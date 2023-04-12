@@ -1,0 +1,43 @@
+create database object
+
+pass database object into each of the classes
+
+Database.tables =
+{
+    "users": [
+        {
+            "column_name": "name",
+            "data_type": "String",
+            "is_unique": "YES"
+        },
+        {
+            "column_name": "name",
+            "data_type": "String",
+            "is_unique": "YES"
+        },
+    ]
+}
+
+
+Field
+
+Table
+    Name
+    Field
+
+Database
+
+User
+    String
+    String
+
+Workout
+    String
+    User
+
+Main
+    db = new Database
+    
+
+
+1,2,3,4,5,6
