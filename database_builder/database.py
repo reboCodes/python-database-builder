@@ -154,6 +154,29 @@ class Database:
                         "data_type": column[1],
                         "is_unique": is_unique
                     }
+        print("Current tables in database:")
+        print(self.tables)
+
+    def _insert_row_(self, table, row_values):
+        print("\n\ninserting data")
+        print(table)
+        sql = f"insert into {table} ("
+        for column_name in row_values:
+            sql += column_name + ", "
+        sql = sql[:-2] + ") values ("
+        for key, value in row_values.items():
+            if isinstance(value, Table):
+                #TODO: need a way to fetch the id of this object from the database
+                print("cannot yet add a reference, feature coming soon!")
+            else:
+                sql += f"'{value}', "
+        sql = sql[:-2] + ")"     
+        try:
+            self._cur.execute(sql)
+            self._conn.commit()
+        except Exception as err:
+            print(f"Could not insert row into Table '{table}'")
+            print(err)
 
 class Table:
 
@@ -181,13 +204,17 @@ class Table:
                 if attr_name in reserved_table_names:
                     attr_name += "_"
                 if attr_name in self._database.tables:
+                    print("reference found!")
                     if attr_name[-1] != "_":
                         attr_name += "_"
                     reference_name = attr_name + "id"
-                    self._column_data[reference_name] = {"data_type": f"integer references {attr_name}(id)", "is_unique": False} 
+                    print(f"updated column from {attr_name} to {reference_name}")
+                    self._column_data[reference_name] = {"data_type": f"integer references {attr_name} (id)", "is_unique": False} 
+                    self._row_values[reference_name] = attr
                 else:
                     self._column_data[attr_name] = {"data_type": py_to_pg_type(type(attr)), "is_unique": False}
-                self._row_values[attr_name] = attr
+                    self._row_values[attr_name] = attr
+
 
     def exclude(self, columns: list):
         for column in columns:
@@ -208,6 +235,10 @@ class Table:
             for key, value in self._row_values.items():
                 if key not in self._database.tables[self._name]:
                     print(f"Field '{key}' was not found in Table '{self._name}' or in the exclusion list")
+                    #TODO: write function in database to append table to add new column
+                    # self._database._append_table()
+        #TODO: insert row into table in database
+        self._database._insert_row_(self._name, self._row_values)
 
 
 

@@ -20,6 +20,8 @@ if __name__ == "__main__":
     new_user.email = "reggie.scerbo@gmail.com"
     new_user.save()
 
-    workout = Workout(my_db)
-    workout.user = new_user
-    workout.save()
+    # workout = Workout(my_db)
+    # workout.user = new_user
+    # workout.date = datetime.date.today()
+    # workout.save()
+
