@@ -157,6 +157,24 @@ class Database:
         print("Current tables in database:")
         print(self.tables)
 
+    def _get_id(self, table_object) -> int:
+        # build query
+        sql = f"select id from {table_object._name} where "
+        for key, value in table_object._row_values.items():
+            sql += f"{key} = "
+            if type(value) in [int, float, bool]:
+                sql += str(value) + " and "
+            else:
+                sql += f"'{value}' and "
+        sql = sql[:-5] + ";"
+        # make query
+        try:
+            self._cur.execute(sql)
+            return self._cur.fetchone()[0]
+        except Exception as err:
+            print("Error making query for id")
+            print(err)
+
     def _insert_row_(self, table, row_values):
         print("\n\ninserting data")
         print(table)
@@ -166,8 +184,7 @@ class Database:
         sql = sql[:-2] + ") values ("
         for key, value in row_values.items():
             if isinstance(value, Table):
-                #TODO: need a way to fetch the id of this object from the database
-                print("cannot yet add a reference, feature coming soon!")
+                sql += f"'{self._get_id(value)}', "
             else:
                 sql += f"'{value}', "
         sql = sql[:-2] + ")"     
@@ -240,6 +257,11 @@ class Table:
         #TODO: insert row into table in database
         self._database._insert_row_(self._name, self._row_values)
 
+    #TODO: this method should take in any number of params and return a user object
+    # desired use case examples:
+    #   some_user = User(db).where(name="Reggie", age="24")
+    def where(self, **args):
+        None
 
 
 def py_to_pg_type(py_type):
